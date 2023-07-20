@@ -1,0 +1,19 @@
+all:
+  hosts:
+    server1:
+      ansible_host: SERVER1_IP_OR_HOSTNAME
+    server2:
+      ansible_host: SERVER2_IP_OR_HOSTNAME
+### Updates the package cache (only for Red Hat-based systems).
+### Installs Java, wget, curl, and git.
+### Sets the JAVA_HOME environment variable to use Java 1.8.
+### Downloads and extracts the specified Hadoop version to /opt.
+### Creates a symbolic link for Hadoop to /opt/hadoop.
+### Configures Hadoop environment variables in /etc/profile.d/hadoop.sh.
+### Ensures that the Hadoop data directory exists and has the correct permissions.
+### Downloads and installs Docker Compose.
+
+### Replace SERVER1_IP_OR_HOSTNAME and SERVER2_IP_OR_HOSTNAME with the actual IP addresses or hostnames of your RHEL servers.
+### Then, run the playbook using the following command:'ansible-playbook -i <Playbook1_name> <Playbook2_name>'
+### This will install and configure Hadoop and Docker on the specified RHEL servers. 
+### Make sure you have proper SSH access and necessary permissions to execute commands with sudo on the target servers.
