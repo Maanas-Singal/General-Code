@@ -1,0 +1,81 @@
+---
+- name: Install and Configure Hadoop and Docker on RHEL
+  hosts: all
+  become: true
+  vars:
+    hadoop_version: "3.3.1"  # Adjust the version to your preference
+    docker_compose_version: "1.29.2"  # Adjust the version to your preference
+  tasks:
+    - name: Update package cache
+      yum:
+        name: '*'
+        state: latest
+      when: ansible_os_family == 'RedHat'
+
+    - name: Install required packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - java-1.8.0-openjdk-devel
+        - wget
+        - curl
+        - git
+
+    - name: Set JAVA_HOME environment variable
+      lineinfile:
+        dest: /etc/environment
+        regexp: '^JAVA_HOME='
+        line: 'JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk'
+        state: present
+
+    - name: Load the environment variables
+      command: "source /etc/environment"
+      args:
+        creates: /usr/lib/jvm/java-1.8.0-openjdk
+
+    - name: Download and extract Hadoop
+      unarchive:
+        src: "https://downloads.apache.org/hadoop/common/hadoop-{{ hadoop_version }}/hadoop-{{ hadoop_version }}.tar.gz"
+        dest: /opt
+        remote_src: yes
+        creates: "/opt/hadoop-{{ hadoop_version }}"
+
+    - name: Create symbolic link for Hadoop
+      file:
+        src: "/opt/hadoop-{{ hadoop_version }}"
+        dest: "/opt/hadoop"
+        state: link
+
+    - name: Configure Hadoop environment variables
+      lineinfile:
+        dest: /etc/profile.d/hadoop.sh
+        line: |
+          export HADOOP_HOME="/opt/hadoop"
+          export PATH="$PATH:$HADOOP_HOME/bin"
+      notify:
+        - Reload Profile
+
+    - name: Ensure Hadoop data directory exists
+      file:
+        path: "/data/hadoop"
+        state: directory
+
+    - name: Set Hadoop data directory permissions
+      file:
+        path: "/data/hadoop"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0755"
+
+    - name: Download and install Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-Linux-x86_64"
+        dest: /usr/local/bin/docker-compose
+        mode: "a+x"
+      notify:
+        - Reload Profile
+
+  handlers:
+    - name: Reload Profile
+      command: "source /etc/profile"
