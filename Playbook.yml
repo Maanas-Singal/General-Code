@@ -1,0 +1,89 @@
+---
+- name: Install Docker and Kubernetes using Minikube on RHEL
+  hosts: your_target_hosts  # Replace with the appropriate target hosts or group name
+  become: true
+  vars:
+    k8s_version: "1.22.0"  # Adjust to your desired Kubernetes version
+
+  tasks:
+    - name: Install required packages for Docker and Kubernetes
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - yum-utils
+        - device-mapper-persistent-data
+        - lvm2
+        - git
+        - gcc
+        - make
+
+    - name: Add Docker repository
+      yum_repository:
+        name: docker-ce-stable
+        description: Docker CE Stable - $basearch
+        baseurl: https://download.docker.com/linux/centos/7/$basearch/stable
+        gpgcheck: yes
+        gpgkey: https://download.docker.com/linux/centos/gpg
+        enabled: yes
+
+    - name: Install Docker
+      yum:
+        name: docker-ce
+        state: latest
+
+    - name: Enable and start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add Kubernetes repository
+      yum_repository:
+        name: kubernetes
+        description: Kubernetes
+        baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+        gpgcheck: yes
+        gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+        enabled: yes
+
+    - name: Install Kubernetes components
+      yum:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: present
+
+    - name: Enable and start kubelet service
+      service:
+        name: kubelet
+        state: started
+        enabled: yes
+
+    - name: Download and Install Minikube
+      block:
+        - name: Download Minikube
+          get_url:
+            url: https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+            dest: /usr/local/bin/minikube
+            mode: 0755
+
+        - name: Install Minikube
+          file:
+            path: /usr/local/bin/minikube
+            state: link
+      delegate_to: localhost
+
+    - name: Verify Docker and Kubernetes versions
+      command: "{{ item }}"
+      loop:
+        - docker --version
+        - kubeadm version
+        - kubectl version --short
+
+    - name: Add user to docker group
+      user:
+        name: your_username  # Replace with your username
+        groups: docker
+        append: yes
