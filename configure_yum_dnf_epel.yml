@@ -1,0 +1,43 @@
+---
+- name: Configure Yum, DNF, and EPEL on CentOS
+  hosts: your_target_hosts
+  become: yes
+
+  tasks:
+    - name: Update the system
+      package:
+        name: yum
+        state: latest
+
+    - name: Install DNF (if not already installed)
+      package:
+        name: dnf
+        state: present
+
+    - name: Install EPEL repository
+      yum_repository:
+        name: epel
+        description: EPEL Yum repository
+        baseurl: https://dl.fedoraproject.org/pub/epel/7/$basearch
+        gpgcheck: yes
+        gpgkey: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
+        enabled: yes
+
+    - name: Update the system using DNF (CentOS 8 and above)
+      command: dnf upgrade --assumeyes
+
+    - name: Update the system using Yum (CentOS 7)
+      command: yum update --assumeyes
+      when: ansible_distribution_major_version == '7'
+
+### Make sure to replace your_target_hosts with the hosts or host groups on which you want to configure Yum, DNF, and EPEL. 
+### The playbook will perform the following tasks:
+## Update the system's Yum package manager to the latest version.
+## Install DNF (if it is not already installed) as it replaces Yum in CentOS 8 and above.
+## Install the EPEL repository, which provides additional packages not included in the CentOS base repositories.
+## Update the system using DNF (for CentOS 8 and above).
+## Update the system using Yum (for CentOS 7).
+
+#### Run this bash command to invoke the playbook:
+#### ansible-playbook configure_yum_dnf_epel.yml -i inventory_file -u remote_user --private-key=path_to_ssh_key
+### Replace 'inventory_file', 'remote_user', and 'path_to_ssh_key' with appropriate values for your environment.
